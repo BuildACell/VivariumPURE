@@ -134,7 +134,6 @@ class Template(Datum):
         state = [
             site.state_when(levels)
             for site in self.sites]
-
         return tuple([self.id] + state)
 
     def strength_from(self, terminator_index):

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 import os
 import copy
 
@@ -17,14 +15,17 @@ from vivarium_cell.data.nucleotides import nucleotides
 
 NAME = 'rna_degradation'
 
+
 def all_subkeys(d):
     subkeys = set([])
     for ase in d.keys():
         subkeys = subkeys.union(set(d[ase].keys()))
     return list(subkeys)
 
+
 def kinetics(E, S, kcat, km):
     return kcat * E * S / (S + km)
+
 
 DEFAULT_TRANSCRIPT_DEGRADATION_KM = 1e-23
 
@@ -67,11 +68,8 @@ class RnaDegradation(Process):
         'time_step': 1.0,
     }
 
-    def __init__(self, initial_parameters=None):
-        if not initial_parameters:
-            initial_parameters = {}
-
-        super(RnaDegradation, self).__init__(initial_parameters)
+    def __init__(self, parameters=None):
+        super().__init__(parameters)
 
         self.derive_defaults('sequences', 'transcript_order', keys_list)
         self.derive_defaults('catalytic_rates', 'protein_order', keys_list)
@@ -89,8 +87,15 @@ class RnaDegradation(Process):
             for transcript in self.transcript_order}
 
         self.global_deriver_key = self.or_default(
-            initial_parameters, 'global_deriver_key')
+            parameters, 'global_deriver_key')
 
+    def or_default(self, parameters, key):
+         return parameters.get(key, self.defaults[key])
+
+    def derive_defaults(self, original_key, derived_key, f):
+         source = self.parameters.get(original_key)
+         self.parameters[derived_key] = f(source)
+         return self.parameters[derived_key]
 
     def ports_schema(self):
 
@@ -208,6 +213,7 @@ def test_rna_degradation(end_time=10):
     return simulate_process(rna_degradation, settings)
 
 
+# python pure/processes/degradation.py
 if __name__ == '__main__':
     out_dir = os.path.join(PROCESS_OUT_DIR, NAME)
     if not os.path.exists(out_dir):

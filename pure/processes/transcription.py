@@ -141,8 +141,8 @@ class Transcription(Process):
 
         super().__init__(parameters)
 
-        # self.derive_defaults('templates', 'promoter_order', keys_list)
-        # self.derive_defaults('templates', 'transcript_ids', template_products)
+        self.derive_defaults('templates', 'promoter_order', keys_list)
+        self.derive_defaults('templates', 'transcript_ids', template_products)
 
         self.sequence = self.parameters['sequence']
         self.templates = self.parameters['templates']
@@ -180,6 +180,11 @@ class Transcription(Process):
         self.chromosome_ports = ['rnaps', 'rnap_id', 'domains', 'root_domain']
 
         log.debug('final transcription parameters: {}'.format(self.parameters))
+
+    def derive_defaults(self, original_key, derived_key, f):
+        source = self.parameters.get(original_key)
+        self.parameters[derived_key] = f(source)
+        return self.parameters[derived_key]
 
     def build_affinity_vector(self, promoters, factors):
         vector = np.zeros(len(self.promoter_order), dtype=np.float64)
@@ -515,7 +520,7 @@ def test_transcription():
             'chromosome': chromosome.to_dict(),
             'molecules': initial_molecules,
             'proteins': {UNBOUND_RNAP_KEY: 10},
-            'factors': {'tfA': 0.2, 'tfB': 0.7}}})
+            'factors': {'tfA': 0.2 * units.mM, 'tfB': 0.7 * units.mM}}})
 
     pp(experiment.state.get_value())
     experiment.update(10.0)

@@ -11,21 +11,26 @@ import logging as log
 from arrow import StochasticSystem
 
 from vivarium.core.process import Process
-from vivarium.core.experiment import pp
+from vivarium.core.engine import pp
 from vivarium_cell.data.amino_acids import amino_acids
 from vivarium_cell.data.molecular_weight import molecular_weight
-from vivarium_cell.library.polymerize import Elongation, Polymerase, Template, build_stoichiometry, all_products, generate_template
+from vivarium_cell.library.polymerize import (
+    Elongation, Polymerase, Template, build_stoichiometry, all_products, generate_template)
+
 
 class Ribosome(Polymerase):
     pass
 
+
 class Transcript(Template):
     pass
+
 
 def shuffle(l):
     l = [item for item in l]
     np.random.shuffle(l)
     return l
+
 
 def random_string(alphabet, length):
     string = ''
@@ -48,6 +53,7 @@ Z = random_string(monomer_symbols, 60)
 B = random_string(monomer_symbols, 30)
 Y = random_string(monomer_symbols, 40)
 
+
 def gather_genes(affinities):
     genes = {}
     for operon, product in affinities.keys():
@@ -56,12 +62,14 @@ def gather_genes(affinities):
         genes[operon].append(product)
     return genes
 
+
 def transcripts_to_gene_counts(transcripts, operons):
     counts = {}
     for transcript, genes in operons.items():
         for gene in genes:
             counts[(transcript, gene)] = transcripts.get(transcript, 0)
     return counts
+
 
 class Translation(Process):
 
@@ -103,7 +111,7 @@ class Translation(Process):
         'time_step': 1.0,
     }
 
-    def __init__(self, initial_parameters=None):
+    def __init__(self, parameters=None):
         '''A stochastic translation model
 
         .. WARNING::
@@ -133,7 +141,7 @@ class Translation(Process):
           to convert counts to concentrations.
 
         Arguments:
-            initial_parameters: A dictionary of configuration options.
+            parameters: A dictionary of configuration options.
                 Accepts the following keys:
 
                 * **sequences** (:py:class:`dict`): Maps from operon
@@ -226,78 +234,28 @@ class Translation(Process):
                   variables you want to be able to access as
                   concentrations from the *concentrations* port. The
                   actual conversion is handled by a deriver.
-
-        Example configuring the process (uses
-        :py:func:vivarium.library.pretty.format_dict):
-
-        >>> from vivarium.library.pretty import format_dict
-        >>> from vivarium_cell.data.amino_acids import amino_acids
-        >>> from vivarium_cell.library.polymerize import generate_template
-        >>> random.seed(0)  # Needed because process is stochastic
-        >>> np.random.seed(0)
-        >>> configurations = {
-        ...     'sequences': {
-        ...         ('oA', 'eA'): 'AWDPT',
-        ...         ('oAZ', 'eZ'): 'YVEGELENGGMFISC',
-        ...     },
-        ...     'templates': {
-        ...         ('oA', 'eA'): generate_template(('oA', 'eA'), 5, ['eA']),
-        ...         ('oAZ', 'eZ'): generate_template(('oAZ', 'eZ'), 15, ['eA', 'eZ']),
-        ...     },
-        ...     'transcript_affinities': {
-        ...         ('oA', 'eA'): 1.0,
-        ...         ('oAZ', 'eZ'): 1.0,
-        ...     },
-        ...     'elongation_rate': 10.0,
-        ...     'polymerase_occlusion': 10,
-        ...     'symbol_to_monomer': amino_acids,
-        ...     'monomer_ids': amino_acids.values(),
-        ...     'concentration_keys': []
-        ... }
-        >>> # make the translation process, and initialize the states
-        >>> translation = Translation(configurations)  # doctest:+ELLIPSIS
-        >>> states = {
-        ...     'ribosomes': {},
-        ...     'molecules': {},
-        ...     'proteins': {UNBOUND_RIBOSOME_KEY: 2},
-        ...     'transcripts': {
-        ...         'oA': 10,
-        ...         'oAZ': 10,
-        ...     }
-        ... }
-        >>> states['molecules'].update(
-        ...     {
-        ...         molecule_id: 100
-        ...         for molecule_id in translation.monomer_ids
-        ...     }
-        ... )
-        >>> update = translation.next_update(1, states)
-        >>> print(update['ribosomes'])
-        {'_add': [{'key': 1, 'state': <class 'vivarium_cell.processes.translation.Ribosome'>: {'id': 1, 'state': 'occluding', 'position': 9, 'template': ('oAZ', 'eZ'), 'template_index': 0, 'terminator': 0}}, {'key': 2, 'state': <class 'vivarium_cell.processes.translation.Ribosome'>: {'id': 2, 'state': 'occluding', 'position': 9, 'template': ('oAZ', 'eZ'), 'template_index': 0, 'terminator': 0}}], '_delete': set()}
         '''
 
-        if not initial_parameters:
-            initial_parameters = {}
 
         self.monomer_symbols = list(amino_acids.keys())
         self.monomer_ids = list(amino_acids.values())
 
         self.default_parameters = copy.deepcopy(self.defaults)
 
-        templates = self.or_default(initial_parameters, 'templates')
+        templates = self.or_default(parameters, 'templates')
 
         self.default_parameters['protein_ids'] = all_products({
             key: Template(config)
             for key, config in templates.items()})
 
         self.default_parameters['transcript_order'] = list(
-            initial_parameters.get(
+            parameters.get(
                 'transcript_affinities',
                 self.default_parameters['transcript_affinities']).keys())
         self.default_parameters['molecule_ids'] = self.monomer_ids
 
         self.parameters = copy.deepcopy(self.default_parameters)
-        self.parameters.update(initial_parameters)
+        self.parameters.update(parameters)
 
         self.sequences = self.parameters['sequences']
         self.templates = self.parameters['templates']
@@ -332,13 +290,16 @@ class Translation(Process):
         self.protein_keys = self.concentration_keys + self.protein_ids
         self.all_protein_keys = self.protein_keys + [UNBOUND_RIBOSOME_KEY]
 
-        self.mass_deriver_key = self.or_default(initial_parameters, 'mass_deriver_key')
+        self.mass_deriver_key = self.or_default(parameters, 'mass_deriver_key')
         self.concentrations_deriver_key = self.or_default(
-            initial_parameters, 'concentrations_deriver_key')
+            parameters, 'concentrations_deriver_key')
 
         log.info('translation parameters: {}'.format(self.parameters))
 
-        super(Translation, self).__init__(self.parameters)
+        super().__init__(self.parameters)
+
+    def or_default(self, parameters, key):
+         return parameters.get(key, self.defaults[key])
 
     def ports_schema(self):
 
@@ -596,7 +557,7 @@ def test_translation():
     print('complete!')
 
 
-
+# python pure/processes/translation.py
 if __name__ == '__main__':
     test_translation()
 
