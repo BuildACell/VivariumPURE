@@ -13,11 +13,13 @@ gfp_plasmid_config = {
                     'position': 736,
                     'strength': 1.0,
                     'products': ['GFP_RNA']}]}},
+    'promoter_affinities': {},
     'domains': {
         0: {
             'id': 0,
             'lead': 0,
             'lag': 0,
             'children': []}},
-    'rnaps': []}
+    'rnaps': [],
+}
 

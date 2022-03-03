@@ -1,9 +1,9 @@
 import os
 
-from vivarium.core.process import Composer
+from vivarium.core.composer import Composer
 from vivarium.core.composition import (
-    COMPARTMENT_OUT_DIR,
-    simulate_compartment_in_experiment,
+    COMPOSITE_OUT_DIR,
+    simulate_composer,
 )
 from vivarium.plots.simulation_output import plot_simulation_output
 from vivarium.library.units import units
@@ -15,10 +15,9 @@ from pure.plots.gene_expression import plot_gene_expression_output
 from pure.processes.transcription import Transcription, UNBOUND_RNAP_KEY
 from pure.processes.translation import Translation, UNBOUND_RIBOSOME_KEY
 from pure.processes.degradation import RnaDegradation
-from pure.processes.complexation import Complexation
 from pure.data.amino_acids import amino_acids
 from pure.data.nucleotides import nucleotides
-from pure.data.plasmids import gfp
+from pure.data.plasmids.gfp import gfp_plasmid_config
 
 
 NAME = 'gene_expression'
@@ -36,7 +35,7 @@ class GeneExpression(Composer):
     }
 
     def __init__(self, config):
-        super(GeneExpression, self).__init__(config)
+        super().__init__(config)
 
     def generate_processes(self, config):
         transcription_config = config['transcription']
@@ -54,18 +53,15 @@ class GeneExpression(Composer):
         transcription = Transcription(transcription_config)
         translation = Translation(translation_config)
         degradation = RnaDegradation(degradation_config)
-        complexation = Complexation(complexation_config)
         mass_deriver = TreeMass(config.get('mass_deriver', {
             'initial_mass': config['initial_mass']}))
-        division = DivisionVolume(config)
 
         return {
             'mass_deriver': mass_deriver,
             'transcription': transcription,
             'translation': translation,
             'degradation': degradation,
-            'complexation': complexation,
-            'division': division}
+        }
 
     def generate_topology(self, config):
         global_path = config['global_path']
@@ -94,15 +90,8 @@ class GeneExpression(Composer):
                 'transcripts': ('transcripts',),
                 'proteins': ('proteins',),
                 'molecules': ('molecules',),
-                'global': global_path},
-
-            'complexation': {
-                'monomers': ('proteins',),
-                'complexes': ('proteins',),
-                'global': global_path},
-
-            'division': {
-                'global': global_path}}
+                'global': global_path}
+        }
 
 
 # test
@@ -119,17 +108,18 @@ def run_gene_expression(total_time=10, out_dir='out'):
     sim_plot_settings = {'max_rows': 25}
     plot_simulation_output(timeseries, sim_plot_settings, out_dir)
 
+
 def test_gene_expression(total_time=10):
-    # load the compartment
-    compartment_config = {
+    # load the composer
+    composer_config = {
         'external_path': ('external',),
         'global_path': ('global',),
         'agents_path': ('..', '..', 'cells',),
         'transcription': {
-            'sequence': toy_chromosome_config['sequence'],
-            'templates': toy_chromosome_config['promoters'],
-            'genes': toy_chromosome_config['genes'],
-            'promoter_affinities': toy_chromosome_config['promoter_affinities'],
+            'sequence': gfp_plasmid_config['sequence'],
+            'templates': gfp_plasmid_config['promoters'],
+            'genes': gfp_plasmid_config['genes'],
+            'promoter_affinities': gfp_plasmid_config['promoter_affinities'],
             'transcription_factors': ['tfA', 'tfB'],
             'elongation_rate': 10.0},
         # 'complexation': {
@@ -137,7 +127,7 @@ def test_gene_expression(total_time=10):
         #     'complex_ids': [],
         #     'stoichiometry': {}}
     }
-    compartment = GeneExpression(compartment_config)
+    composer = GeneExpression(composer_config)
 
     molecules = {
         nt: 1000
@@ -165,11 +155,12 @@ def test_gene_expression(total_time=10):
         'initial_state': {
             'proteins': proteins,
             'molecules': molecules}}
-    return simulate_compartment_in_experiment(compartment, settings)
+    return simulate_composer(composer, settings)
 
 
+# python pure/composites/gene_expression.py
 if __name__ == '__main__':
-    out_dir = os.path.join(COMPARTMENT_OUT_DIR, NAME)
+    out_dir = os.path.join(COMPOSITE_OUT_DIR, NAME)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
