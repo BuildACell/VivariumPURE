@@ -5,20 +5,21 @@ Stochastic Transcription
 '''
 
 import os
-import copy
 import numpy as np
 import logging as log
 from arrow import StochasticSystem
 
 from vivarium.library.units import units
-from vivarium.library.dict_utils import deep_merge, keys_list
-from vivarium.core.engine import pp, pf
+from vivarium.library.dict_utils import keys_list
+from vivarium.core.engine import pp
 from vivarium.core.process import Process
-from vivarium.core.composition import process_in_experiment
-from pure.states.chromosome import Chromosome, Rnap, Promoter, frequencies, add_merge, toy_chromosome_config
+from vivarium.core.composition import process_in_experiment, PROCESS_OUT_DIR
+from vivarium.plots.simulation_output import plot_simulation_output
+from pure.states.chromosome import Chromosome, toy_chromosome_config
 from pure.library.polymerize import Elongation, build_stoichiometry, template_products
 from pure.data.nucleotides import nucleotides
 
+NAME = 'transcription'
 
 def choose_element(elements):
     if elements:
@@ -35,7 +36,7 @@ monomer_ids = list(nucleotides.values())
 #: The default configuration parameters for :py:class:`Transcription`
 class Transcription(Process):
 
-    name = 'transcription'
+    name = NAME
     defaults = {
         'promoter_affinities': {},
         'transcription_factors': [],
@@ -525,6 +526,17 @@ def test_transcription():
     pp(experiment.state.get_value())
     experiment.update(10.0)
     pp(experiment.state.get_value())
+
+    # plot
+    data = experiment.emitter.get_timeseries()
+
+    out_dir = os.path.join(PROCESS_OUT_DIR, NAME)
+    settings = {}
+    plot_simulation_output(data,
+                           settings=settings,
+                           out_dir=out_dir,
+                           filename='simulation',
+                           )
 
     print('complete!')
 

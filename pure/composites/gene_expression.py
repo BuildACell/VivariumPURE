@@ -14,7 +14,7 @@ from vivarium.processes.tree_mass import TreeMass
 from pure.plots.gene_expression import plot_gene_expression_output
 from pure.processes.transcription import Transcription, UNBOUND_RNAP_KEY
 from pure.processes.translation import Translation, UNBOUND_RIBOSOME_KEY
-from pure.processes.degradation import RnaDegradation
+from pure.processes.degradation import RnaDegradation, DEFAULT_TRANSCRIPT_DEGRADATION_KM
 from pure.data.amino_acids import amino_acids
 from pure.data.nucleotides import nucleotides
 from pure.data.plasmids.gfp import gfp_plasmid_config
@@ -31,7 +31,6 @@ class GeneExpression(Composer):
         'transcription': {},
         'translation': {},
         'degradation': {},
-        'complexation': {},
     }
 
     def __init__(self, config):
@@ -41,13 +40,11 @@ class GeneExpression(Composer):
         transcription_config = config['transcription']
         translation_config = config['translation']
         degradation_config = config['degradation']
-        complexation_config = config['complexation']
 
         # update timestep
         transcription_config.update({'time_step': config['time_step']})
         translation_config.update({'time_step': config['time_step']})
         degradation_config.update({'time_step': config['time_step']})
-        complexation_config.update({'time_step': config['time_step']})
 
         # make the processes
         transcription = Transcription(transcription_config)
@@ -121,11 +118,27 @@ def test_gene_expression(total_time=10):
             'genes': gfp_plasmid_config['genes'],
             'promoter_affinities': gfp_plasmid_config['promoter_affinities'],
             'transcription_factors': ['tfA', 'tfB'],
-            'elongation_rate': 10.0},
-        # 'complexation': {
-        #     'monomer_ids': [],
-        #     'complex_ids': [],
-        #     'stoichiometry': {}}
+            'elongation_rate': 10.0
+        },
+        'translation': {
+            'sequences': gfp_plasmid_config['sequence'],
+            'templates': gfp_plasmid_config['promoters'],
+            'transcript_affinities': {},
+            'elongation_rate': 5.0,
+        },
+        'degradation': {
+            'sequences': gfp_plasmid_config['sequence'],
+            'catalytic_rates': {
+                'endoRNAse': 0.1
+            },
+            'michaelis_constants': {
+                'transcripts': {
+                    'endoRNAse': {
+                        'GFP_RNA': DEFAULT_TRANSCRIPT_DEGRADATION_KM,
+                    }
+                }
+            }
+        }
     }
     composer = GeneExpression(composer_config)
 
@@ -142,11 +155,11 @@ def test_gene_expression(total_time=10):
                 UNBOUND_RNAP_KEY,
                 UNBOUND_RIBOSOME_KEY]}
 
-    proteins.update({
-        factor: 1
-        for factor in [
-                'tfA',
-                'tfB']})
+    # proteins.update({
+    #     factor: 1
+    #     for factor in [
+    #             'tfA',
+    #             'tfB']})
 
     # simulate
     settings = {

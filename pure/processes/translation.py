@@ -4,6 +4,7 @@ Stochastic Translation
 ======================
 '''
 
+import os
 import copy
 import numpy as np
 import random
@@ -12,10 +13,15 @@ from arrow import StochasticSystem
 
 from vivarium.core.process import Process
 from vivarium.core.engine import pp
-from vivarium_cell.data.amino_acids import amino_acids
-from vivarium_cell.data.molecular_weight import molecular_weight
-from vivarium_cell.library.polymerize import (
+from vivarium.core.composition import process_in_experiment, PROCESS_OUT_DIR
+from vivarium.plots.simulation_output import plot_simulation_output
+from pure.data.amino_acids import amino_acids
+from pure.data.molecular_weight import molecular_weight
+from pure.library.polymerize import (
     Elongation, Polymerase, Template, build_stoichiometry, all_products, generate_template)
+
+
+NAME = 'translation'
 
 
 class Ribosome(Polymerase):
@@ -73,7 +79,7 @@ def transcripts_to_gene_counts(transcripts, operons):
 
 class Translation(Process):
 
-    name = 'translation'
+    name = NAME
     defaults = {
 
         'sequences': {
@@ -551,9 +557,26 @@ def test_translation():
         molecule_id: 100
         for molecule_id in translation.monomer_ids})
 
-    update = translation.next_update(10.0, states)
+    # update = translation.next_update(10.0, states)
+    experiment = process_in_experiment(
+        translation,
+        {'initial_state': states})
 
-    pp(update)
+    pp(experiment.state.get_value())
+    experiment.update(10.0)
+    pp(experiment.state.get_value())
+
+    # plot
+    data = experiment.emitter.get_timeseries()
+
+    out_dir = os.path.join(PROCESS_OUT_DIR, NAME)
+    settings = {}
+    plot_simulation_output(data,
+                           settings=settings,
+                           out_dir=out_dir,
+                           filename='simulation',
+                           )
+
     print('complete!')
 
 
