@@ -2,15 +2,14 @@ import os
 
 import networkx as nx
 import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib import pyplot as plt
 from matplotlib.patches import Patch
 from vivarium.library.make_network import save_network
 
 from pure.data.amino_acids import amino_acids
 from pure.data.nucleotides import nucleotides
-from pure.processes.transcription import UNBOUND_RNAP_KEY
-from pure.processes.translation import UNBOUND_RIBOSOME_KEY
+from pure.processes.legacy.transcription import UNBOUND_RNAP_KEY
+from pure.processes.legacy.translation import UNBOUND_RIBOSOME_KEY
 
 
 def plot_timeseries_heatmaps(timeseries, config, out_dir='out'):

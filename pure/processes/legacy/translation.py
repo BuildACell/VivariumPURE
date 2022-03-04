@@ -580,7 +580,7 @@ def test_translation():
     print('complete!')
 
 
-# python pure/processes/translation.py
+# python pure/processes/legacy/translation.py
 if __name__ == '__main__':
     test_translation()
 

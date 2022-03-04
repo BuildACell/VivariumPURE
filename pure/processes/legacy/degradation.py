@@ -213,7 +213,7 @@ def test_rna_degradation(end_time=10):
     return simulate_process(rna_degradation, settings)
 
 
-# python pure/processes/degradation.py
+# python pure/processes/legacy/degradation.py
 if __name__ == '__main__':
     out_dir = os.path.join(PROCESS_OUT_DIR, NAME)
     if not os.path.exists(out_dir):

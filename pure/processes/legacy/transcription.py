@@ -541,6 +541,6 @@ def test_transcription():
     print('complete!')
 
 
-# python pure/processes/transcription.py
+# python pure/processes/legacy/transcription.py
 if __name__ == '__main__':
     test_transcription()

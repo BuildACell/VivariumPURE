@@ -12,9 +12,9 @@ from vivarium.library.units import units
 from vivarium.processes.tree_mass import TreeMass
 
 from pure.plots.gene_expression import plot_gene_expression_output
-from pure.processes.transcription import Transcription, UNBOUND_RNAP_KEY
-from pure.processes.translation import Translation, UNBOUND_RIBOSOME_KEY
-from pure.processes.degradation import RnaDegradation, DEFAULT_TRANSCRIPT_DEGRADATION_KM
+from pure.processes.legacy.transcription import Transcription, UNBOUND_RNAP_KEY
+from pure.processes.legacy.translation import Translation, UNBOUND_RIBOSOME_KEY
+from pure.processes.legacy.degradation import RnaDegradation, DEFAULT_TRANSCRIPT_DEGRADATION_KM
 from pure.data.amino_acids import amino_acids
 from pure.data.nucleotides import nucleotides
 from pure.data.plasmids.gfp import gfp_plasmid_config
@@ -171,7 +171,7 @@ def test_gene_expression(total_time=10):
     return simulate_composer(composer, settings)
 
 
-# python pure/composites/gene_expression.py
+# python pure/composites/legacy/gene_expression.py
 if __name__ == '__main__':
     out_dir = os.path.join(COMPOSITE_OUT_DIR, NAME)
     if not os.path.exists(out_dir):
