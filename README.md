@@ -6,11 +6,16 @@ Tom -> created a yml file where you can create the conda env from. Users can use
 conda env create -f environment.yml
 ```
 
+
+Steps to replicate this env manually:
+
+In command line
+```
 conda create -n vyvarium python==3.8
 conda activate vyvarium
-manually installed with pip:
-- biocrnpyler
-- pytest
-- vivarium_bioscrape
+pip install biocrnpyler
+pip install pytest
+pip install vivarium_bioscrape
+```
 
 
