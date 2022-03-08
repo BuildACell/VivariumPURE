@@ -13,8 +13,9 @@ And then, you can start the conda environment with
 conda activate vyvarium
 ```
 
+In this environment, you should be able to then run everything smoothly.
 
-If you want to replicate this env manually, you can do the following in command line:
+If you want to replicate this env manually (you really dont have to), you can do the following in command line:
 ```
 conda create -n vyvarium python==3.8
 conda activate vyvarium
